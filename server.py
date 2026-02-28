@@ -42,6 +42,7 @@ INDEX_HTML = """<!doctype html>
   <div class=\"wrap\">
     <h1>OpenClaw: использование моделей по сессиям</h1>
     <div class=\"sub\" id=\"updated\">Загрузка...</div>
+    <div class=\"sub\" id=\"total-eur\"></div>
 
     <div class=\"section\">
       <h2>Активные сессии</h2>
@@ -99,11 +100,17 @@ async function load() {
   try {
     const res = await fetch('/api/sessions');
     const data = await res.json();
-    document.getElementById('updated').textContent = `Обновлено: ${data.generated_at} · курс: 1 USD = ${data.usd_to_eur.toFixed(4)} EUR`;
+    const activeTotal = (data.active || []).reduce((sum, s) => sum + (Number(s.total_eur) || 0), 0);
+    const archivedTotal = (data.archived || []).reduce((sum, s) => sum + (Number(s.total_eur) || 0), 0);
+    const grandTotal = activeTotal + archivedTotal;
+
+    document.getElementById('updated').textContent = `Обновлено: ${data.generated_at}`;
+    document.getElementById('total-eur').textContent = `Суммарно: активные €${money(activeTotal)}, архив €${money(archivedTotal)}, всего €${money(grandTotal)}`;
     renderList('active', data.active);
     renderList('archived', data.archived);
   } catch (e) {
     document.getElementById('updated').textContent = 'Ошибка загрузки данных';
+    document.getElementById('total-eur').textContent = '';
   }
 }
 
